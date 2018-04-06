@@ -11,7 +11,7 @@ If you want to use it with python 3.xx some work will need to be done.
 This program has the following features
 * Read all Flair vents values
 * Read all flair puck values
-* read historical data for vents/pucks
+* read historical data for vents/pucks *(not currently implemented, but the hooks are there)*
 * publish the above to the topic and MQTT broker of your choice
 * set vent % open
 * Set puck values (room occupied, set_point_c, clear hold) are built in, others could be added
@@ -19,7 +19,7 @@ This program has the following features
 * auto timezone correction of time/dates
 * optionally save values in config file
 
-The set values are updated by publishing the value to eg `topic/flair/command/puck/name/occupied ON` (or OFF) where topic is the topic you have selected, name is the name of the puck. See *Usage* below
+The set values are updated by publishing the value to eg `topic/flair/command/puck/name/occupied ON` (or `OFF`) where topic is the topic you have selected, name is the name of the puck. See *Usage* below
 
 ## Pre-Requisites
 To use this program, you will need to have requested access to the Flair API (email hello@flair.co) you will get:
@@ -44,7 +44,7 @@ First you need python 2.7 installed. **This program will not work with Python 3.
 Make sure you have the Flair API-Client installed
 Make sure you have paho-mqtt installed
 
-now clone it from GitHub
+now clone the repository from GitHub (obviously you need `git` installed)
 ```bash
 git clone git clone https://github.com/NickWaterton/Flair-Vents-MQTT-Interface.git
 cd Flair-Vents-MQTT-Interface
@@ -87,7 +87,6 @@ optional arguments:
   -C, --config          use config File
   -D, --debug           debug mode
   -V, --version         show program's version number and exit
-
 ```
 
 ## Quick Start
@@ -275,13 +274,13 @@ You can actually publish anything you want to this topic, it's the act of publis
 You will notice there is some confusion between Pucks and Rooms, most items are read from pucks, but only Rooms (not pucks) can be updated. It's a bit confusing, but if you only have one puck per room. it's not a problem. So if you have two pucks in one room, and you update the `occupied` setting for one puck, then the Room actually gets updated, so both pucks for the room will show `inactive`. Same for `set_temp`.
 Vents are much simpler, you just update the `percent-open` per vent.
 ### LOG
-pathname of the log file (default=~/Scripts/flair_vents.log). if you enter `None` for the log file pathname, then no logging is performed.
+pathname of the log file (default=`~/Scripts/flair_vents.log`). if you enter `None` for the log file pathname, then no logging is performed.
 ### D
 Debug mode - just gives more messages
 ### C
 Use configuration file.
-entering all this stuff on the command line every time is a PITA, so if you include -C on the command line, all the settings will be saved to a configuration file called `config.ini`
-now if you start the program and just use -C as the argument, like this:
+entering all this stuff on the command line every time is a PITA, so if you include `-C` on the command line, all the settings will be saved to a configuration file called `config.ini`
+now if you start the program and just use `-C` as the argument, like this:
 ```bash
 ./vents_bridge.py -C -l flair_vents.log
 ```
@@ -298,7 +297,7 @@ Here the house_id would be updated from 1234 to 4321 (or whatever).
 Likewise, **Do NOT share your MQTT broker ip, port, username or password** as it will also give anyone access to your home settings.
 
 ## OpenHab
-I have some custom icons (vent32 for example) so you will have to invent your own icons for vents, I have also customised `switch.map`. Items that are charted need to be in persistence also.
+I have some custom icons (vent32, msg, parents etc.) so you will have to invent your own icons for vents and others, or change them to default icons. I have also customised `switch.map`. Items that are charted need to be in persistence also.
 This is just for one vent, puck etc. you will need to customise this for however many vents/pucks you have and their unique names. For instance, you won't have a vent called `Master Bedroom-d7df` you have to substitute whatever your vent is called (as shown by the program).
 In this case `Proliant` is my MQTT server as defined for OpenHab.
 I'm using OpenHab 2.2 (a SNAPSHOT build) but it should work on any version of OH2. No doubt OH2.3 (or whatever) will break everything again, but I'll update here if it does.
@@ -387,6 +386,7 @@ Frame item=flairnetwork label="Family Room" {
 }
 ```
 ### Rules
+One per vent:
 ```
 rule "Vent 2 (Family Room - patio doors) Received Pressure update"
 when
