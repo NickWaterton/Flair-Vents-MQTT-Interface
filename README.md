@@ -19,7 +19,7 @@ This program has the following features
 * auto timezone correction of time/dates
 * optionally save values in config file
 
-The set values are updated by publishing the value to eg `topic/flair/command/puck/name/occupied True` where topic is the topic you have selected, name is the name of the puck. See *Usage* below
+The set values are updated by publishing the value to eg `topic/flair/command/puck/name/occupied ON` (or OFF) where topic is the topic you have selected, name is the name of the puck. See *Usage* below
 
 ## Pre-Requisites
 To use this program, you will need to have requested access to the Flair API (email hello@flair.co) you will get:
@@ -131,7 +131,9 @@ Vent: Hallway-9e65, Latest Reading: {
 }
 ```
 
-This will refresh every 60 seconds (default), and will publish the values to the mqtt topic `openhab/sensors`. Details will be logged to ./flair_vents.log
+This will refresh every 60 seconds (default), and will publish the values to the mqtt topic `openhab/sensors`. Details will be logged to `./flair_vents.log`.
+Times are in ISO format, and from the flair API are in UTC time. These are automatically converted to local time using the timezone set on your computer, the offset from UTC is given (depending on your local timezone).
+If you want UTC, you are welcome to fiddle with the program, timezones are a pain! I have no idea if the DST correction is right or not.
 
 If you see errors like this:
 
@@ -154,7 +156,7 @@ This is the CLIENT_SECRET you obtained from Flair by requesting access to the AP
 ### COUNT
 Number of times to loop data, 0=forever
 ### T
-time between polling default=60s
+Time in seconds between polling default=60s. I don't reccomend setting this to less than 60 seconds, as that's how often the pucks/vents update anyway.
 ### BROKER
 MQTT broker ip address or domain name. Default is 127.0.0.1 which is the local loopback address, 'localhost' or '' also means the current machine.
 ### PORT
@@ -164,14 +166,14 @@ MQTT broker username. This is configured on the broker, and may not be used. If 
 ### PASSWORD
 MQTT broker password, to be used un conjunction with the username. If not used leave as is (None) and no authentication will be used
 ### TOPIC
-MQTT topic to publish data to. this is the stub, the data will be published to the `stub/name` where name is `percent_open` and so on. This is also the stub for sending command to the vents/pucks. you publish a command to `stub/flair/command/name` to update a setting.
+MQTT topic to publish data to. this is the stub, the data will be published to the `stub/type/name/value_name` where type is `puck` or `vent`, name is the device name, and `value_name` is `percent_open` and so on. This is also the stub for sending command to the vents/pucks. you publish a command to `stub/flair/command/type/name/value_name` to update a setting.
 Current supported items that can be updated:
 * occupied
 * set_temp
 * set_point_manual
 * percent_open
 
-You publish to the vent or puck in question (or in the case of a puck in the room).
+You publish to the vent or puck in question (or in the case of a puck, the room).
 
 For example, publishing to the default topic `openhab/sensors`, here is some output:
 ```
@@ -192,7 +194,7 @@ Vent: Nick's Office-5384, Latest Reading: {
   "percent_open": 0,
   "set_by": "Algo"
 }
-.....
+...
 Puck: Family Room-97b2, Latest Reading: {
   "Humidity": 44.0,
   "Pressure": 98.36,
@@ -246,12 +248,12 @@ openhab/sensors/flair/puck/Family Room-97b2/RSSI -67
 openhab/sensors/flair/puck/Family Room-97b2/active True
 openhab/sensors/flair/puck/Family Room-97b2/set_temp 22.0
 ```
-
+The `date` is the date/time of the reading (ie when the puck/vent reported the value) converted to a local time, the `LastUpdate` is the date/time that it was published (in text, not ISO format), also a local time.
 To update the Office vent to 100% open, you would publish the following:
 ```
 openhab/sensors/flair/command/vent/Nick's Office-5384/percent_open 100
 ```
-On an Ubuntu 14.04 system using mosquitto-clients (see here for how to install: https://www.digitalocean.com/community/tutorials/how-to-install-and-secure-the-mosquitto-mqtt-messaging-broker-on-ubuntu-16-04)
+On an Ubuntu 14.04 system using `mosquitto-clients`
 Enter:
 ```bash
 mosquitto_pub -t "openhab/sensors/flair/command/vent/Nick's Office-5384/percent_open" -m 100
@@ -273,7 +275,7 @@ You can actually publish anything you want to this topic, it's the act of publis
 You will notice there is some confusion between Pucks and Rooms, most items are read from pucks, but only Rooms (not pucks) can be updated. It's a bit confusing, but if you only have one puck per room. it's not a problem. So if you have two pucks in one room, and you update the `occupied` setting for one puck, then the Room actually gets updated, so both pucks for the room will show `inactive`. Same for `set_temp`.
 Vents are much simpler, you just update the `percent-open` per vent.
 ### LOG
-pathname of the log file (default=~/Scripts/flair_vents.log). if you enter None for the log file pathname, then no logging is performed.
+pathname of the log file (default=~/Scripts/flair_vents.log). if you enter `None` for the log file pathname, then no logging is performed.
 ### D
 Debug mode - just gives more messages
 ### C
@@ -295,9 +297,11 @@ Here the house_id would be updated from 1234 to 4321 (or whatever).
 **Do NOT share your house_id, CLIENT_ID or CLIENT_SECRET** This includes the **confing.ini** file. This seems obvious, but it will give anyone access to your home settings if you do.
 Likewise, **Do NOT share your MQTT broker ip, port, username or password** as it will also give anyone access to your home settings.
 
-## Openhab
-I have some custom icons (vent32 for example) you will have to invent your own icons, I have also customised switch.map. Items that are charted need to be in persistence also.
+## OpenHab
+I have some custom icons (vent32 for example) so you will have to invent your own icons for vents, I have also customised `switch.map`. Items that are charted need to be in persistence also.
 This is just for one vent, puck etc. you will need to customise this for however many vents/pucks you have and their unique names. For instance, you won't have a vent called `Master Bedroom-d7df` you have to substitute whatever your vent is called (as shown by the program).
+In this case `Proliant` is my MQTT server as defined for OpenHab.
+I'm using OpenHab 2.2 (a SNAPSHOT build) but it should work on any version of OH2. No doubt OH2.3 (or whatever) will break everything again, but I'll update here if it does.
 Here are my example items, rules and sitemap for vent control:
 ### Items
 ```
