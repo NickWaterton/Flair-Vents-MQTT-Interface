@@ -1,0 +1,8 @@
+config.ini
+*.pyc
+__pycache__
+.ropeproject
+.autoenv.zsh
+dist/
+*.egg-info/
+*.log
