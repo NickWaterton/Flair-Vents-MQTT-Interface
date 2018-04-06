@@ -1,8 +1,7 @@
-# Flair-Vents-MQTT-Interface
-Interface to flair Smart vents and pucks via MQTT
-
 Flair Vents MQTT Interface
 ==========================
+
+Interface to flair Smart vents and pucks via MQTT
 
 This is version 1.0 so it may be buggy!
 **NOTE: This is a python 2.7 program**
@@ -20,7 +19,7 @@ This program has the following features
 * auto timezone correction of time/dates
 * optionally save values in config file
 
-The set values are updated by publishing the value to eg `topic/flair/command/occupied True` where topic is the topic you have selected. See *Usage* below
+The set values are updated by publishing the value to eg `topic/flair/command/puck/name/occupied True` where topic is the topic you have selected, name is the name of the puck. See *Usage* below
 
 ## Pre-Requisites
 To use this program, you will need to have requested access to the Flair API (email hello@flair.co) you will get:
@@ -54,9 +53,9 @@ You should now have the program `vents_bridge.py` - make sure the file is execut
 
 No need to install anything, you can just run the program as is.
 
-run `./vents_bridge.py -h` (or `python vents_bridge.py` if you are on windows)
+run `./vents_bridge.py -h` (or `python vents_bridge.py -h` if you are on windows)
 
-```bash
+```
 usage: vents_bridge.py [-h] [-id HOUSE_ID] [-cid CLIENT_ID]
                        [-cs CLIENT_SECRET] [-n COUNT] [-t T] [-b BROKER]
                        [-p PORT] [-u USER] [-pw PASSWORD] [-m TOPIC] [-l LOG]
@@ -101,7 +100,7 @@ If your MQTT broker is on a different host, or port, or you have an mqtt usernam
 Otherwise the default is for the broker to be on the same machine, with the default port and no username or password configured.
 
 You should see something like this:
-```bash
+```
 ****** Program Started ********
 Authenticating
 Subscribed: 1 (0,)
@@ -143,29 +142,28 @@ ApiError<HTTP Response: 404>
 ```
 Then you have something wrong, house_id, CLIENT_ID or CLIENT_SECRET. Check again...
 
-
 ## Usage
 Here are the command line options explained
-# id
+### ID
 This is the flair house_id, usually a 4 digit number identifying your house, you can see it at the end of the flair URL when you log in to your flair web page: eg `https://my.flair.co/h/1234` where 1234 is your house id.
 This is a required entry, the program will not work without it.
-# CLIENT_ID
+### CLIENT_ID
 This is the CLIENT_ID you obtained from Flair by requesting access to the API via hello@flair.co. It is required. you can enter it on the command line.
-# CLIENT_SECRET
+### CLIENT_SECRET
 This is the CLIENT_SECRET you obtained from Flair by requesting access to the API via hello@flair.co. It is required. you can enter it on the command line.
-# COUNT
+### COUNT
 Number of times to loop data, 0=forever
-# T
+### T
 time between polling default=60s
-#BROKER
+### BROKER
 MQTT broker ip address or domain name. Default is 127.0.0.1 which is the local loopback address, 'localhost' or '' also means the current machine.
-# PORT
+### PORT
 MQTT broker port number (default 1883) enter your MQTT broker port here if it is different from the default (eg 8883 for secure MQTT access)
-# USER
+### USER
 MQTT broker username. This is configured on the broker, and may not be used. If not used leave as is (None) and no authentication will be used
-# PASSWORD
+### PASSWORD
 MQTT broker password, to be used un conjunction with the username. If not used leave as is (None) and no authentication will be used
-# TOPIC
+### TOPIC
 MQTT topic to publish data to. this is the stub, the data will be published to the `stub/name` where name is `percent_open` and so on. This is also the stub for sending command to the vents/pucks. you publish a command to `stub/flair/command/name` to update a setting.
 Current supported items that can be updated:
 * occupied
@@ -176,7 +174,7 @@ Current supported items that can be updated:
 You publish to the vent or puck in question (or in the case of a puck in the room).
 
 For example, publishing to the default topic `openhab/sensors`, here is some output:
-```bash
+```
 ****** Program Started ********
 Authenticating
 Subscribed: 1 (0,)
@@ -271,11 +269,14 @@ To cancel a hold on a room temperature, publish:
 openhab/sensors/flair/command/puck/Family Room-97b2/set_point_manual false
 ```
 You can actually publish anything you want to this topic, it's the act of publishing to it that cancels the hold, not what you send.
-#LOG
+
+You will notice there is some confusion between Pucks and Rooms, most items are read from pucks, but only Rooms (not pucks) can be updated. It's a bit confusing, but if you only have one puck per room. it's not a problem. So if you have two pucks in one room, and you update the `occupied` setting for one puck, then the Room actually gets updated, so both pucks for the room will show `inactive`. Same for `set_temp`.
+Vents are much simpler, you just update the `percent-open` per vent.
+### LOG
 pathname of the log file (default=~/Scripts/flair_vents.log). if you enter None for the log file pathname, then no logging is performed.
-# D
+### D
 Debug mode - just gives more messages
-# C
+### C
 Use configuration file.
 entering all this stuff on the command line every time is a PITA, so if you include -C on the command line, all the settings will be saved to a configuration file called `config.ini`
 now if you start the program and just use -C as the argument, like this:
@@ -298,8 +299,8 @@ Likewise, **Do NOT share your MQTT broker ip, port, username or password** as it
 I have some custom icons (vent32 for example) you will have to invent your own icons, I have also customised switch.map. Items that are charted need to be in persistence also.
 This is just for one vent, puck etc. you will need to customise this for however many vents/pucks you have and their unique names. For instance, you won't have a vent called `Master Bedroom-d7df` you have to substitute whatever your vent is called (as shown by the program).
 Here are my example items, rules and sitemap for vent control:
-# Items
-```bash
+### Items
+```
 /* Flair Vents and Pucks */
 Group flairnetwork "Flair Network"  <network> (Sensors)
 Group Flair_Temperature "Flair Temperature"  <temperature>   (gCharts)
@@ -353,8 +354,8 @@ String flairpuck1Hold_Reason "FP1(MB) Hold Reason [%s]" <msg>  (flairpucks)   {m
 DateTime flairpuck1Hold_Until "FP1(MB) Hold Until [%1$ta %1$tR]" <clock>  (flairpucks)   {mqtt="<[proliant:openhab/sensors/flair/puck/Master Bedroom-0b07/hold_until:state:default]"}
 String flairpuck1LastUpdate "FP1(MB) Last Update [%s]" <clock>  (flairpucks)   {mqtt="<[proliant:openhab/sensors/flair/puck/Master Bedroom-0b07/LastUpdate:state:default]"}
 ```
-# Sitemap
-```bash
+### Sitemap
+```
 Frame item=flairnetwork label="Family Room" {
     Switch item=flairpuck2Occupied visibility=[flairpuck2Online==ON]
     Text item=flairpuck2Set_By visibility=[flairpuck2Online==ON]
@@ -381,8 +382,8 @@ Frame item=flairnetwork label="Family Room" {
     Text item=flairvent2aDate label="Last Reading [%1$ta %1$tR]" valuecolor=[>300="red",>30="orange",<=30="green"] visibility=[flairvent2Date < 120, flairvent2aDate < 120, flairpuck2Date < 120]
 }
 ```
-# Rules
-```bash
+### Rules
+```
 rule "Vent 2 (Family Room - patio doors) Received Pressure update"
 when
     Item flairvent2Pressure received update
@@ -394,9 +395,9 @@ then
     postUpdate(flairvent2Pressure_diff, diff)
 end
 ```
-# Transforms
+### Transforms
 switch.map:
-```bash
+```
 ON=ON
 OFF=OFF
 0=OFF
