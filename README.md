@@ -2,13 +2,16 @@ Flair Vents MQTT Interface
 ==========================
 
 Interface to flair Smart vents and pucks via MQTT
+See https://flair.co for details of this Smart vent Control System.
 
 This is version 1.0 so it may be buggy!
 **NOTE: This is a python 2.7 program**
 If you want to use it with python 3.xx some work will need to be done.
 
+Tested on Ubuntu 14.04, **no guarantees** on anything else!
+
 ## Introduction
-This program has the following features
+This program has the following features:
 * Read all Flair vents values
 * Read all flair puck values
 * read historical data for vents/pucks *(not currently implemented, but the hooks are there)*
