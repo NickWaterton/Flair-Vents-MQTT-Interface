@@ -6,6 +6,7 @@ all other calls are to links from this structure
 Oauth 2 authentication is required first (see id and secret below)
 
 N Waterton 6th April 2018 V 1.0 Initial release
+N Waterton 21st march 2019 V 1.1 Updated to support python 2 or 3.
 '''
 
 from flair_api import make_client, Resource
@@ -18,10 +19,13 @@ import os,sys
 import logging
 from logging.handlers import RotatingFileHandler
 import paho.mqtt.client as paho
-import ConfigParser
+try:
+    import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
 
 API_ROOT = 'https://api.flair.co'
-__VERSION__ = "1.0"
+__VERSION__ = "1.1"
 
 class t_zone(tzinfo):
     '''
@@ -792,7 +796,7 @@ def PublishVent_data(structure, mqttc=None, name=None):
                 log.info("Vent: %s, Latest Reading: %s" % (vent.name, json.dumps(vent_data[vent.name], indent=2, sort_keys=True)))
                 if mqttc is not None:
                     mqttc.publish('%s/flair/vent/%s/LastUpdate' % (pub_topic,vent.name), "%s" % time.ctime())
-                    for data, value in vent_data[vent.name].iteritems():
+                    for data, value in vent_data[vent.name].items():
                         if value is not None:
                             mqttc.publish('%s/flair/vent/%s/%s' % (pub_topic,vent.name,data), value)
                 else:
@@ -846,7 +850,7 @@ def PublishPuck_data(structure, mqttc=None, name=None):
                 log.info("Puck: %s, Latest Reading: %s" % (puck.name, json.dumps(puck_data[puck.name], indent=2, sort_keys=True)))
                 if mqttc is not None:
                     mqttc.publish('%s/flair/puck/%s/LastUpdate' % (pub_topic,puck.name), "%s" % time.ctime())
-                    for data, value in puck_data[puck.name].iteritems():
+                    for data, value in puck_data[puck.name].items():
                         if value is not None:
                             mqttc.publish('%s/flair/puck/%s/%s' % (pub_topic,puck.name,data), value)
                 else:
@@ -1055,7 +1059,7 @@ def main():
     parser.add_argument('-cid','--client_id', action="store", default=None, help='flair API CLIENT ID (default=None)')
     parser.add_argument('-cs','--client_secret', action="store", default=None, help='flair API CLIENT SECRET (default=None)')
     parser.add_argument('-n',action='store', dest='count', default=0,type=int, help="Number of times to loop data, 0=forever")
-    parser.add_argument('-t',action='store',type=float, default=60.0, help='time between polling default=60s')
+    parser.add_argument('-t',action='store',type=int, default=60, help='time between polling default=60s')
     parser.add_argument('-b','--broker', action="store", default=None, help='mqtt broker to publish sensor data to. (default=127.0.0.1)')
     parser.add_argument('-p','--port', action="store", type=int, default=None, help='mqtt broker port (default=1883)')
     parser.add_argument('-u','--user', action="store", default=None, help='mqtt broker username. (default=none)')
