@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''
 api calls are to https://my.flair.co/api/structures/1234 (1234 is our house_id)
@@ -6,12 +6,13 @@ all other calls are to links from this structure
 Oauth 2 authentication is required first (see id and secret below)
 
 N Waterton 6th April 2018 V 1.0 Initial release
-N Waterton 21st march 2019 V 1.1 Updated to support python 2 or 3.
+N Waterton 21st March 2019 V 1.1 Updated to support python 2 or 3.
+N Waterton 22nd March 2019 V1.2 enhanced exception handling
 '''
 
 from flair_api import make_client, Resource
 from flair_api.client import ApiError
-from requests import ConnectionError
+from requests.exceptions import ConnectionError, ChunkedEncodingError
 import json
 from datetime import datetime, timedelta, tzinfo
 import time
@@ -25,7 +26,7 @@ except ImportError:
     import configparser as ConfigParser
 
 API_ROOT = 'https://api.flair.co'
-__VERSION__ = "1.1"
+__VERSION__ = "1.2"
 
 class t_zone(tzinfo):
     '''
@@ -774,10 +775,17 @@ def PublishVent_data(structure, mqttc=None, name=None):
             log.info("got data for %d vents, just %s: %s" % (len(vents), 'showing' if mqttc is None else 'publishing', name))
         
         for vent in vents:
-            sensor_readings = vent.get_rel('sensor-readings')
-            #states = vent.get_rel('vent-states')
-            current_state = vent.get_rel('current-state')
-            #room = vent.get_rel('room')
+            timeout = 0
+            while timeout < 5:
+                try:
+                    timeout+=1
+                    sensor_readings = vent.get_rel('sensor-readings')
+                    #states = vent.get_rel('vent-states')
+                    current_state = vent.get_rel('current-state')
+                    #room = vent.get_rel('room')
+                    break
+                except (ChunkedEncodingError, ConnectionError):
+                    log.error("received Connection Error - retry: %d" % timeout)
             
             if vent.inactive:
                 vent_data[vent.name] = {'online':False}
@@ -819,10 +827,17 @@ def PublishPuck_data(structure, mqttc=None, name=None):
             log.info("got data for %d pucks, just %s: %s" % (len(pucks), 'showing' if mqttc is None else 'publishing', name))
         
         for puck in pucks:
-            sensor_readings = puck.get_rel('sensor-readings')
-            #puck_states = puck.get_rel('puck-states')
-            current_state = puck.get_rel('current-state')
-            room = puck.get_rel('room')
+            timeout = 0
+            while timeout < 5:
+                try:
+                    timeout+=1
+                    sensor_readings = puck.get_rel('sensor-readings')
+                    #puck_states = puck.get_rel('puck-states')
+                    current_state = puck.get_rel('current-state')
+                    room = puck.get_rel('room')
+                    break
+                except (ChunkedEncodingError, ConnectionError):
+                    log.error("received Connection Error - retry: %d" % timeout)
 
             if puck.rssi == None:
                 puck_data[puck.name] = {'online':False}
@@ -1185,6 +1200,10 @@ def main():
             except ConnectionError as e:    #requests.exceptions.ConnectionError
                 log.exception(e)
                 mqttc.publish(pub_topic+"/flair/LastUpdate", "Connection Error Updating at: %s" % time.ctime())
+                
+            except Exception as e:    #all other exceptions
+                log.exception(e)
+                mqttc.publish(pub_topic+"/flair/LastUpdate", "Exception Error Updating at: %s" % time.ctime())
             
             if not forever: counter += 1
             time.sleep(arg.t)
