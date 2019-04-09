@@ -1124,11 +1124,11 @@ def main():
         house_id = arg.house_id
         values['CLIENT_ID'] = arg.client_id
         values['CLIENT_SECRET'] = arg.client_secret
-        if values['CLIENT_ID'] is None or values['CLIENT_SECRET'] is None or house_id is none:
+        if values['CLIENT_ID'] is None or values['CLIENT_SECRET'] is None or house_id is None:
             log.critical("You must enter your house_id, API CLIENT ID and CLIENT SECRET to access the flair API - get them from hello@flair.co")
             sys.exit(1)
         
-        if arg.Topic is not None:
+        if arg.topic is not None:
             values['pub_topic'] = arg.topic
 
         if arg.broker is not None:
